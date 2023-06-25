@@ -3,4 +3,4 @@
 Spacefile
 **/__pycache__
 *.pyc
-
+config.py
