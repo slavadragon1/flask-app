@@ -1,11 +1,14 @@
 from flask import Flask
 from config import *
-import psycopg2
+from flask_login import LoginManager
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.config.from_object(Config)
-conn = psycopg2.connect(dbname=dbname, host=host, port=port, user=user, password=password)
-cur = conn.cursor()
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 
-from src import routes
+
+from src import routes, models
