@@ -1,6 +1,4 @@
 /.venv
-.space
-Spacefile
 **/__pycache__
 *.pyc
 config.py
