@@ -13,6 +13,10 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key = True)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
+
+    messages = db.relationship('Message', backref='sender', lazy='dynamic')
+    posts = db.relationship('Post', backref='author', lazy='dynamic')
+    
     password_hash = db.Column(db.String(128))
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime, default = datetime.utcnow)
@@ -55,12 +59,14 @@ class User(UserMixin, db.Model):
         return '<User {}>'.format(self.username) 
 
 
-
-
 @login.user_loader
 def load_user(id):
     return User.query.get(int(id))
 
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    body = db.Column(db.String(140))
 
 
 class Post(db.Model):

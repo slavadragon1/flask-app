@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block title %}Chat{% endblock %}
+
+{% block app_content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+<script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+<script type="text/javascript" src="//cdn.socket.io/4.4.1/socket.io.min.js"></script>
+<!-- <script type="text/javascript" charset="utf-8">
+    var socket = io();
+    socket.on('message', function(data) {
+        socket.emit('message', data)
+    });
+
+    function handleSubmit(event) {
+        event.preventDefault(); // Отменить обновление страницы
+    
+        // Дополнительный код для обработки отправки формы
+      }
+</script> -->
+
+
+<div>
+    <div id="chat"></div>
+    {{ form.message(autocomplete='off') }}
+    {{ form.submit() }}
+</div>
+
+<script type="text/javascript" charset="utf-8">
+    let socket = io()
+    document.getElementById('message-field').addEventListener('keydown', function(){
+        if (event.keyCode === 13){
+            event.preventDefault()
+        }
+    })
+
+    document.getElementById('send-btn').addEventListener('click', function(){
+        let message = document.getElementById('message-field').value
+        socket.emit('message_received', message)
+        document.getElementById('message-field').value = '';
+    })
+
+    socket.on('chat', function(message){
+        document.getElementById('chat').innerHTML += message;
+        document.getElementById('chat').innerHTML += '<br>';
+    })
+</script>
+{% endblock %}

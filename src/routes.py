@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from src import app, db
-from flask import render_template, url_for, redirect, flash, request
+from src import app, db, socketio
+from flask import render_template, url_for, redirect, flash, request, session
 from werkzeug.urls import url_parse
-from src.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm
+from src.forms import LoginForm, RegistrationForm, EditProfileForm, PostForm, MessageForm
 from flask_login import current_user, login_user, logout_user, login_required
-from src.models import User, Post
+from src.models import User, Post, Message
 from datetime import datetime
+from flask_socketio import send, emit
+from flask_babel import _ 
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -15,14 +17,48 @@ from datetime import datetime
 def index():
     form = PostForm()
     if form.validate_on_submit():
-        post = Post(body=form.post.data, user_id=current_user)
+        post = Post(body=form.post.data, author=current_user)
         db.session.add(post)
         db.session.commit()
-        flash('You`ve publish the post')
+        flash(('You`ve publish the post'))
         return redirect(url_for('index'))
 
-    posts = Post.query.all()
-    return render_template('index.html', posts=posts)
+    page = request.args.get('page', 1, type=int)
+    posts = current_user.followed_posts().paginate(
+        page=page, per_page = app.config['POSTS_PER_PAGE'], error_out=False)
+    next_url = url_for('index', page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('index', page=posts.prev_num) \
+        if posts.has_prev else None
+    return render_template('index.html', posts=posts.items, form=form, next_url=next_url, prev_url=prev_url)
+
+@app.route('/explore')
+@login_required
+def explore():
+    page = request.args.get('page', 1, type=int)
+    posts= Post.query.order_by(Post.timestamp.desc()).paginate(
+        page=page, per_page = app.config['POSTS_PER_PAGE'], error_out=False)
+    next_url = url_for('explore', page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('explore', page=posts.prev_num) \
+        if posts.has_prev else None
+    return render_template('index.html', posts=posts.items, next_url=next_url, prev_url=prev_url)
+
+@app.route('/chat', methods=['GET', 'POST'])
+@login_required
+def chat():
+    form=MessageForm()
+    return render_template('chat.html', form=form)
+
+@socketio.on('message_received')
+def text(message):
+    print('Recieved message', message)
+    emit('chat', message, broadcast=True)
+    message = Message(body=message, sender=current_user)
+    db.session.add(message)
+    db.session.commit()
+    print('OK')
+    
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -60,11 +96,14 @@ def register():
 @login_required
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
-    posts = [
-        {'author': user, 'body': 'Test post #1'},
-        {'author': user, 'body': 'Test post #2'}
-    ]
-    return render_template('user.html', user=user, posts=posts)
+    page = request.args.get('page', 1, type=int)
+    posts = user.posts.order_by(Post.timestamp.desc()).paginate(
+        page = page, per_page = app.config['POSTS_PER_PAGE'], error_out=False)
+    next_url = url_for('user', username=user.username, page=posts.next_num) \
+        if posts.has_next else None
+    prev_url = url_for('user', username=user.username, page=posts.prev_num) \
+        if posts.has_prev else None
+    return render_template('user.html', user=user, posts=posts, next_url=next_url, prev_url=prev_url)
 
 @app.route('/follow/<username>')
 @login_required

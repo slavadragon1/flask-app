@@ -1,37 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %}</title>
-    <!-- <link rel="stylesheet" href="style.css"> -->
-</head>
-<body>
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+    {% if title %}{{ title }} - Microblog{% else %}Welcome to Microblog{% endif %}
+{% endblock %}
+
     <!-- NAVBAR -->
-    <div class="navbar">
-        <div>
-            Microblog:
-            <a href="{{ url_for('index') }}">Home</a>
-            {% if current_user.is_anonymous %}
-            <a href="{{ url_for('login') }}">Login</a>
-            {% else %}
-            <a href="{{ url_for('user', username=current_user.username) }}">Profile</a>
-            <a href="{{ url_for('logout') }}">Logout</a>
-            {% endif %}
-        </div>
-    </div>
-    <!-- CONTENT -->
-    <hr>
+{% block navbar %}
+    <nav class="navbar navbar-default">
+        Microblog:
+        <a href="{{ url_for('index') }}">Home</a>
+        <a href="{{ url_for('explore') }}">Explore</a>
+        {% if current_user.is_anonymous %}
+        <a href="{{ url_for('login') }}">Login</a>
+        {% else %}
+        <a href="{{ url_for('chat') }}">Chat</a>
+        <a href="{{ url_for('user', username=current_user.username) }}">Profile</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+        {% endif %}
+    </nav>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
-        <ul>
             {% for message in messages %}
-            <li>{{ message }}</li>
+            <div class="alert alert-info" role="alert">{{ message }}</div>
             {% endfor %}
-        </ul>
         {% endif %}
         {% endwith %}
-    {% block content %}{% endblock %}
-</body>
-</html>
+
+        {# содержимое приложения которое должно быть предоставлено в блоке app_content #}
+        {% block app_content %}{% endblock %}
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+    {{ super() }}
+    {{ moment.include_moment() }}
+    <!-- {{ moment.lang('ru') }} -->
+{% endblock %}

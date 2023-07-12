@@ -45,3 +45,7 @@ class EditProfileForm(FlaskForm):
 class PostForm(FlaskForm):
     post = TextAreaField('Say something...', validators=[DataRequired(), Length(min=1, max=140)])
     submit = SubmitField('Submit')
+
+class MessageForm(FlaskForm):
+    message = StringField('Username', validators=[DataRequired()], id='message-field')
+    submit = SubmitField('Send', id='send-btn')
